@@ -1,0 +1,157 @@
+
+<!DOCTYPE HTML>
+<html> 
+<head> 
+ 
+<script src="codef/codef_core.js"></script> 
+<script src="codef/codef_scrolltext.js"></script> 
+<script src="codef/codef_decrunch.js"></script> 
+<script src="codef/codef_starfield.js"></script> 
+<script src="assets/js/TinyJSid.js"></script>
+<script src="assets/js/TinyJSidWrapper.js"></script>
+
+<style type="text/css">
+	html {
+		background-color: black;
+	}	
+</style>
+
+<script>
+
+const SAMPLES_PER_BUFFER = 8192;
+ 
+var stage, mycanvas, font, scrollerBackground, logo, raster,
+width = 320, height = 200,
+scroller, sinParams, starfield, starParams,
+logoSin = 0, logoY = ((height - 165) / 2), rasterDirection = true, rasterSin = 0, rasterY,
+atariDecrunch,
+
+// sid stuff
+audiocontex,
+bufferSource,
+gainNode,
+analyzerNode
+;
+ 
+
+
+
+
+function init(){
+	stage = new canvas(640, 400, "main");
+	stage.contex.imageSmoothingEnabled = false;
+	stage.contex.mozImageSmoothingEnabled = false;
+	stage.contex.oImageSmoothingEnabled = false;
+	stage.contex.webkitImageSmoothingEnabled = false;
+
+	mycanvas = new canvas(width, height);
+	
+	font = new image('assets/img/font_select.png');
+	font.initTile(16, 16, 32);
+
+	scrollerBackground = new image('assets/img/colorscroll.gif');
+
+	sinParams = [
+		{
+			myvalue: 0,
+			amp: 25,
+			inc:0.2,
+			offset: -0.04
+		}
+	];
+
+	starParams = [
+		{nb:50, speedy:0, speedx:5.0, color:'#888888', size:3},
+		{nb:50, speedy:0, speedx:3.8, color:'#666666', size:2},
+		{nb:50, speedy:0, speedx:1.9, color:'#444444', size:1}
+	];
+
+	starfield = new starfield2D_dot(mycanvas, starParams);
+
+	scroller = new scrolltext_horizontal();
+	scroller.scrtxt = 'PRAVIMO KONCERT U PODRUMU! DODJITE OBAVEZNO I PONESITE LOPATE...                   ';
+	scroller.init(mycanvas, font, 1, sinParams);
+
+	logo = new image('assets/img/logo_transeen.png');
+	raster = new image('assets/img/raster.gif');
+	
+	atariDecrunch = new AmigaDecrunch(3, 4, 100, 840);
+	playSong('assets/X-Ray.sid');
+	
+	decrunch();
+
+	// go();
+}
+ 
+function decrunch() {
+	atariDecrunch.doDecrunch(stage);
+	
+	if(!atariDecrunch.finished) {
+		requestAnimFrame(decrunch);
+	} else {
+		go();
+	}
+}
+
+function go() {
+	mycanvas.fill('#000');
+	moveRaster();
+
+	if (rasterDirection) {
+		drawRaster();
+		render();
+	} else {
+		render();
+		drawRaster();
+	}
+
+	renderMain();
+	requestAnimFrame( go );
+}
+
+function render() {
+	drawLogo();
+
+	scroller.draw(120 - 16);
+	// font.print(canvas, 'YEOMAN!', 100, 100);
+
+	mycanvas.contex.globalCompositeOperation = 'darker';
+	scrollerBackground.draw(mycanvas, 0, 50);
+}
+
+function renderMain() {
+	mycanvas.contex.globalCompositeOperation = 'source-over';
+	mycanvas.draw(stage, 0, 0, 1, 0, 2, 2);
+}
+
+function drawRaster() {
+	mycanvas.contex.globalCompositeOperation = 'source-over';
+	starfield.draw();
+	raster.draw(mycanvas, 0, rasterY);
+}
+
+function drawLogo() {
+	var x = -450 + Math.ceil(Math.sin(logoSin) * 500);
+	// console.log(x);
+	logoSin += 0.020;
+	logo.draw(mycanvas, x, logoY);
+}
+
+function moveRaster() {
+	rasterY = 90 + Math.ceil(Math.sin(rasterSin) * 110);
+	rasterSin += 0.040;
+	if (rasterY <= 0) {
+		rasterDirection = true;
+	} else if (rasterY >= 200) {
+		rasterDirection = false;
+	}
+}
+ 
+</script> 
+</head> 
+<body onLoad="init();">
+
+<center><div id="main"></div>
+
+</body> 
+</html>
